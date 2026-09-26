@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whipsnade Park GC - Match Play Simulator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        golf: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                            950: '#052e16',
+                        },
+                        gold: {
+                            400: '#facc15',
+                            500: '#eab308',
+                            600: '#ca8a04',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .gold-gradient {
+            background: linear-gradient(135deg, #fef08a 0%, #eab308 50%, #ca8a04 100%);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between antialiased selection:bg-emerald-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="bg-slate-900/90 border-b border-slate-800 sticky top-0 z-30 px-4 py-3 sm:px-8 flex justify-between items-center backdrop-blur-md">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-full bg-emerald-700 flex items-center justify-center text-gold-400 font-bold border border-gold-500/40 shadow-lg">
+                <i class="fa-solid fa-flag text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-base sm:text-lg tracking-wide text-white leading-tight">WHIPSNADE PARK</h1>
+                <p class="text-xs text-emerald-400 font-medium">Golf Club • White Tees Scratch Match Play</p>
+            </div>
+        </div>
+        <div id="header-status-badge" class="hidden sm:flex items-center space-x-3 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700">
+            <span class="text-xs text-slate-400">Match:</span>
+            <span id="match-header-state" class="text-xs font-bold text-gold-400">ALL SQUARE</span>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6 flex flex-col justify-center">
+
+        <!-- SETUP SCREEN VIEW -->
+        <section id="setup-view" class="w-full max-w-2xl mx-auto space-y-6 py-4">
+            <div class="glass-panel p-6 sm:p-8 rounded-2xl shadow-2xl relative overflow-hidden">
+                <div class="absolute -right-16 -top-16 w-48 h-48 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
+                
+                <div class="text-center space-y-2 mb-8">
+                    <span class="px-3 py-1 bg-emerald-950 text-emerald-400 text-xs font-semibold rounded-full border border-emerald-800/50 uppercase tracking-wider">Scratch Match Play Challenge</span>
+                    <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">Virtual Golfer Simulator</h2>
+                    <p class="text-slate-400 text-sm max-w-md mx-auto">Play 18 holes from the championship White Tees (Par 73, 6,715 Yds) against an AI virtual golfer.</p>
+                </div>
+
+                <form id="setup-form" onsubmit="handleStartGame(event)" class="space-y-6">
+                    <!-- Player Name -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2" for="player-name">Your Name</label>
+                        <div class="relative">
+                            <i class="fa-solid fa-user-ninja absolute left-3.5 top-3.5 text-slate-500"></i>
+                            <input type="text" id="player-name" required value="Golfer 1" placeholder="Enter name"
+                                class="w-full bg-slate-950/80 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm font-medium text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Difficulty Levels -->
+                    <div>
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Select Opponent Level</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <!-- Easy Level -->
+                            <label class="relative flex flex-col p-4 bg-slate-900/90 border-2 border-slate-800 rounded-xl cursor-pointer transition-all hover:border-slate-700 has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-950/30">
+                                <input type="radio" name="difficulty" value="easy" class="sr-only" onchange="updateOpponentPreview()">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-bold text-sm text-emerald-400">Easy</span>
+                                    <i class="fa-solid fa-seedling text-emerald-500 text-xs"></i>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Hcp 6.0 – 9.0</span>
+                                <span class="text-[10px] text-slate-500 mt-2">+1 to +6 over Hcp</span>
+                            </label>
+
+                            <!-- Medium Level -->
+                            <label class="relative flex flex-col p-4 bg-slate-900/90 border-2 border-slate-800 rounded-xl cursor-pointer transition-all hover:border-slate-700 has-[:checked]:border-gold-500 has-[:checked]:bg-gold-950/20">
+                                <input type="radio" name="difficulty" value="medium" checked class="sr-only" onchange="updateOpponentPreview()">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-bold text-sm text-gold-400">Medium</span>
+                                    <i class="fa-solid fa-golf-ball-tee text-gold-500 text-xs"></i>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Hcp 3.0 – 6.0</span>
+                                <span class="text-[10px] text-slate-500 mt-2">+1 to +6 over Hcp</span>
+                            </label>
+
+                            <!-- Hard Level -->
+                            <label class="relative flex flex-col p-4 bg-slate-900/90 border-2 border-slate-800 rounded-xl cursor-pointer transition-all hover:border-slate-700 has-[:checked]:border-rose-500 has-[:checked]:bg-rose-950/20">
+                                <input type="radio" name="difficulty" value="hard" class="sr-only" onchange="updateOpponentPreview()">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="font-bold text-sm text-rose-400">Hard</span>
+                                    <i class="fa-solid fa-trophy text-rose-500 text-xs"></i>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Hcp 0.0 – 3.0</span>
+                                <span class="text-[10px] text-slate-500 mt-2">+1 to +6 over Hcp</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- AI Profile Preview -->
+                    <div id="ai-profile-card" class="bg-slate-900/80 rounded-xl p-4 border border-slate-800 flex items-center space-x-4">
+                        <div class="w-12 h-12 rounded-full bg-gold-600/20 border border-gold-500/30 flex items-center justify-center text-gold-400 text-xl shrink-0">
+                            <i class="fa-solid fa-user-astronaut"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between">
+                                <h4 id="ai-name" class="text-sm font-bold text-white truncate">Virtual Pro</h4>
+                                <span id="ai-hcp-badge" class="px-2 py-0.5 bg-slate-800 text-gold-400 text-xs rounded font-bold border border-slate-700">Hcp 4.5</span>
+                            </div>
+                            <p id="ai-desc" class="text-xs text-slate-400 mt-0.5 truncate">Steady player with solid course management.</p>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" id="start-match-btn" class="w-full py-3.5 px-6 rounded-xl font-bold text-slate-950 gold-gradient hover:opacity-95 shadow-lg shadow-gold-500/10 transform active:scale-[0.99] transition-all flex items-center justify-center space-x-2 cursor-pointer">
+                        <span>Start Scratch Match</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- GAMEPLAY SCREEN VIEW (Hidden Initially) -->
+        <section id="gameplay-view" class="hidden space-y-4">
+            
+            <!-- Match Status Header Bar -->
+            <div class="glass-panel p-4 rounded-xl flex flex-wrap items-center justify-between gap-3 shadow-lg">
+                <div class="flex items-center space-x-4">
+                    <div class="text-center sm:text-left">
+                        <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400 block">Match Status</span>
+                        <span id="match-status-text" class="text-xl font-black text-gold-400 tracking-tight">ALL SQUARE</span>
+                    </div>
+                    <div class="h-8 w-px bg-slate-800 hidden sm:block"></div>
+                    <div class="hidden sm:block">
+                        <span id="match-hole-indicator" class="text-xs font-semibold text-slate-300">Hole 1 of 18</span>
+                        <p id="dormie-alert" class="text-[11px] font-bold text-rose-400 hidden">DORMIE HOLE</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-2">
+                    <button onclick="toggleScorecardModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 flex items-center space-x-2 transition">
+                        <i class="fa-solid fa-table-cells"></i>
+                        <span class="hidden sm:inline">Scorecard</span>
+                    </button>
+                    <button onclick="confirmRestartGame()" class="px-3 py-2 bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 text-xs font-medium rounded-lg border border-slate-800 flex items-center space-x-1 transition">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span class="hidden sm:inline">Quit Match</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Main Hole Layout & Interactive Playing Area -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                
+                <!-- Left/Top: Visual Hole Map & Hole Stats Card -->
+                <div class="lg:col-span-7 glass-panel p-4 sm:p-5 rounded-xl space-y-4 flex flex-col justify-between">
+                    <div>
+                        <!-- Hole Header -->
+                        <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+                            <div>
+                                <span id="hole-number-badge" class="px-2.5 py-1 bg-emerald-950 text-emerald-400 text-xs font-black rounded-md border border-emerald-800">HOLE 1</span>
+                                <h3 id="hole-name" class="text-lg font-bold text-white mt-1">The Quarry</h3>
+                            </div>
+                            <div class="flex items-center space-x-4 text-right">
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block font-semibold">PAR</span>
+                                    <span id="hole-par" class="text-base font-extrabold text-white">5</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block font-semibold">WHITE YDS</span>
+                                    <span id="hole-yards" class="text-base font-extrabold text-slate-200">470</span>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] text-slate-400 block font-semibold">STROKE INDEX</span>
+                                    <span id="hole-si" class="text-base font-extrabold text-gold-400">12</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Pro Tip -->
+                        <div class="mt-3 flex items-start space-x-2 text-xs text-slate-300 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+                            <i class="fa-solid fa-lightbulb text-gold-400 mt-0.5"></i>
+                            <span id="hole-tip">Downhill par 5 opening hole. Drive right of center to set up an aggressive lay-up.</span>
+                        </div>
+                    </div>
+
+                    <!-- Canvas Graphic View for Hole Layout -->
+                    <div class="relative bg-slate-950 rounded-lg overflow-hidden border border-slate-800 my-2 aspect-[16/9] flex items-center justify-center">
+                        <canvas id="hole-canvas" class="w-full h-full block"></canvas>
+                        <div class="absolute bottom-2 left-2 bg-slate-900/80 text-[10px] text-slate-400 px-2 py-0.5 rounded border border-slate-800">
+                            Tactical Hole Visualiser
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right/Bottom: Hole Execution & Virtual Golfer Roll Panel -->
+                <div class="lg:col-span-5 glass-panel p-4 sm:p-5 rounded-xl flex flex-col justify-between space-y-4">
+                    
+                    <!-- Virtual Opponent Shot / Roll Simulator Card -->
+                    <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-robot text-gold-400"></i>
+                                <span id="opp-card-name" class="text-xs font-bold text-slate-200">Opponent</span>
+                            </div>
+                            <span id="opp-sim-status" class="text-[10px] font-semibold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">Ready</span>
+                        </div>
+
+                        <div id="opp-hole-result" class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-center min-h-[76px] flex flex-col justify-center items-center">
+                            <span id="opp-score-text" class="text-2xl font-black text-white">?</span>
+                            <span id="opp-score-label" class="text-xs text-slate-400 mt-0.5">Simulate opponent hole score</span>
+                        </div>
+
+                        <button id="sim-opp-btn" onclick="simulateOpponentHole()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-lg border border-slate-700 transition flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-dice"></i>
+                            <span>Roll Virtual Golfer Score</span>
+                        </button>
+                    </div>
+
+                    <!-- Player Score Selection Input -->
+                    <div class="space-y-3">
+                        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Your Gross Score (Strokes)</label>
+                        
+                        <div class="grid grid-cols-5 gap-1.5">
+                            <button type="button" onclick="selectPlayerScore(-2)" id="score-btn-eagle" class="score-selector-btn py-2.5 bg-slate-900 hover:bg-emerald-950/80 border border-slate-800 hover:border-emerald-600 rounded-lg text-center transition">
+                                <span class="block text-xs font-bold text-emerald-400" id="eagle-val">3</span>
+                                <span class="text-[9px] text-slate-400 block">Eagle</span>
+                            </button>
+                            <button type="button" onclick="selectPlayerScore(-1)" id="score-btn-birdie" class="score-selector-btn py-2.5 bg-slate-900 hover:bg-emerald-950/80 border border-slate-800 hover:border-emerald-600 rounded-lg text-center transition">
+                                <span class="block text-xs font-bold text-emerald-300" id="birdie-val">4</span>
+                                <span class="text-[9px] text-slate-400 block">Birdie</span>
+                            </button>
+                            <button type="button" onclick="selectPlayerScore(0)" id="score-btn-par" class="score-selector-btn py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-800 rounded-lg text-center transition">
+                                <span class="block text-xs font-bold text-white" id="par-val">5</span>
+                                <span class="text-[9px] text-slate-400 block">Par</span>
+                            </button>
+                            <button type="button" onclick="selectPlayerScore(1)" id="score-btn-bogey" class="score-selector-btn py-2.5 bg-slate-900 hover:bg-amber-950/50 border border-slate-800 hover:border-amber-700 rounded-lg text-center transition">
+                                <span class="block text-xs font-bold text-amber-400" id="bogey-val">6</span>
+                                <span class="text-[9px] text-slate-400 block">Bogey</span>
+                            </button>
+                            <button type="button" onclick="selectPlayerScore(2)" id="score-btn-double" class="score-selector-btn py-2.5 bg-slate-900 hover:bg-rose-950/50 border border-slate-800 hover:border-rose-800 rounded-lg text-center transition">
+                                <span class="block text-xs font-bold text-rose-400" id="double-val">7</span>
+                                <span class="text-[9px] text-slate-400 block">D.Bogey</span>
+                            </button>
+                        </div>
+
+                        <!-- Manual Custom Input Field -->
+                        <div class="flex items-center space-x-2 pt-1">
+                            <span class="text-xs text-slate-400 font-medium">Exact Gross Score:</span>
+                            <input type="number" id="custom-player-score" min="1" max="15" placeholder="Strokes" oninput="handleCustomScoreInput(this.value)"
+                                class="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-center font-bold text-white focus:outline-none focus:border-emerald-500">
+                        </div>
+                    </div>
+
+                    <!-- Confirm Hole Button -->
+                    <button id="confirm-hole-btn" onclick="submitHoleOutcome()" disabled class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 text-slate-950 font-bold text-sm rounded-xl transition shadow-lg flex items-center justify-center space-x-2 cursor-pointer">
+                        <span>Confirm Hole Outcome</span>
+                        <i class="fa-solid fa-circle-check text-xs"></i>
+                    </button>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- MATCH SUMMARY VIEW -->
+        <section id="summary-view" class="hidden max-w-3xl mx-auto space-y-6 py-4">
+            <div class="glass-panel p-6 sm:p-8 rounded-2xl shadow-2xl text-center space-y-6 relative overflow-hidden">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gold-500/20 text-gold-400 text-3xl border border-gold-500/30 mb-2">
+                    <i id="summary-trophy-icon" class="fa-solid fa-trophy"></i>
+                </div>
+
+                <div>
+                    <span class="text-xs font-bold uppercase tracking-widest text-emerald-400">Match Concluded • White Tees</span>
+                    <h2 id="final-result-title" class="text-3xl sm:text-4xl font-extrabold text-white mt-1">Player Won 3 & 2</h2>
+                    <p id="final-result-subtitle" class="text-slate-400 text-sm mt-1">Scratch match result at Whipsnade Park GC.</p>
+                </div>
+
+                <!-- Highlight Cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 py-2">
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Holes Won</span>
+                        <span id="stat-holes-won" class="text-xl font-extrabold text-emerald-400">0</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Holes Lost</span>
+                        <span id="stat-holes-lost" class="text-xl font-extrabold text-rose-400">0</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Holes Halved</span>
+                        <span id="stat-holes-halved" class="text-xl font-extrabold text-gold-400">0</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                        <span class="text-[10px] text-slate-400 font-bold uppercase block">Your Gross Score</span>
+                        <span id="stat-player-gross" class="text-xl font-extrabold text-white">75</span>
+                    </div>
+                </div>
+
+                <!-- Opponent Performance Recap -->
+                <div class="bg-slate-900/60 p-4 rounded-xl border border-slate-800 text-left space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-400 font-medium">Opponent Target Range:</span>
+                        <span id="stat-opp-target" class="font-bold text-slate-200">+3 over hcp</span>
+                    </div>
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-slate-400 font-medium">Opponent Gross Score:</span>
+                        <span id="stat-opp-actual" class="font-bold text-gold-400">79 Gross</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
+                    <button onclick="toggleScorecardModal()" class="w-full sm:w-1/2 py-3 bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm rounded-xl border border-slate-700 transition">
+                        View Complete Scorecard
+                    </button>
+                    <button onclick="resetToSetup()" class="w-full sm:w-1/2 py-3 gold-gradient text-slate-950 font-bold text-sm rounded-xl shadow-lg transition">
+                        Play New Match
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- SCORECARD MODAL -->
+    <div id="scorecard-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-2 sm:p-4 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-5xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+            
+            <!-- Modal Header -->
+            <div class="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-clipboard-list text-gold-400"></i>
+                    <h3 class="font-bold text-base text-white">Official Scorecard • Whipsnade Park White Tees</h3>
+                </div>
+                <button onclick="toggleScorecardModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Scorecard Table Container -->
+            <div class="p-4 overflow-x-auto flex-1">
+                <table class="w-full text-xs text-center border-collapse min-w-[700px]">
+                    <thead>
+                        <tr class="bg-slate-950 text-slate-400 font-bold border-b border-slate-800">
+                            <th class="p-2 text-left w-24">HOLE</th>
+                            <th class="p-2">1</th><th class="p-2">2</th><th class="p-2">3</th>
+                            <th class="p-2">4</th><th class="p-2">5</th><th class="p-2">6</th>
+                            <th class="p-2">7</th><th class="p-2">8</th><th class="p-2">9</th>
+                            <th class="p-2 bg-slate-900 text-gold-400">OUT</th>
+                            <th class="p-2">10</th><th class="p-2">11</th><th class="p-2">12</th>
+                            <th class="p-2">13</th><th class="p-2">14</th><th class="p-2">15</th>
+                            <th class="p-2">16</th><th class="p-2">17</th><th class="p-2">18</th>
+                            <th class="p-2 bg-slate-900 text-gold-400">IN</th>
+                            <th class="p-2 bg-emerald-950 text-emerald-400">TOT</th>
+                        </tr>
+                        <tr class="bg-slate-900/60 text-slate-400 font-semibold border-b border-slate-800">
+                            <td class="p-2 text-left">WHITE (YDS)</td>
+                            <td>470</td><td>365</td><td>146</td>
+                            <td>502</td><td>411</td><td>470</td>
+                            <td>197</td><td>415</td><td>412</td>
+                            <td class="font-bold text-slate-300">3388</td>
+                            <td>390</td><td>549</td><td>410</td>
+                            <td>181</td><td>379</td><td>408</td>
+                            <td>384</td><td>156</td><td>470</td>
+                            <td class="font-bold text-slate-300">3327</td>
+                            <td class="font-bold text-gold-400">6715</td>
+                        </tr>
+                        <tr class="bg-slate-900/40 text-slate-400 font-semibold border-b border-slate-800">
+                            <td class="p-2 text-left">PAR</td>
+                            <td>5</td><td>4</td><td>3</td>
+                            <td>5</td><td>4</td><td>5</td>
+                            <td>3</td><td>4</td><td>4</td>
+                            <td class="font-bold text-slate-300">37</td>
+                            <td>4</td><td>5</td><td>4</td>
+                            <td>3</td><td>4</td><td>4</td>
+                            <td>4</td><td>3</td><td>5</td>
+                            <td class="font-bold text-slate-300">36</td>
+                            <td class="font-bold text-gold-400">73</td>
+                        </tr>
+                        <tr class="bg-slate-900/20 text-slate-500 font-semibold border-b border-slate-800">
+                            <td class="p-2 text-left">S.I.</td>
+                            <td>12</td><td>8</td><td>18</td>
+                            <td>10</td><td>2</td><td>16</td>
+                            <td>14</td><td>6</td><td>4</td>
+                            <td class="bg-slate-900/50">-</td>
+                            <td>9</td><td>7</td><td>1</td>
+                            <td>13</td><td>11</td><td>5</td>
+                            <td>3</td><td>17</td><td>15</td>
+                            <td class="bg-slate-900/50">-</td>
+                            <td class="bg-emerald-950/40">-</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Player Row -->
+                        <tr class="border-b border-slate-800 font-bold text-white">
+                            <td id="sc-player-lbl" class="p-2 text-left text-emerald-400 truncate">PLAYER</td>
+                            <td id="sc-p-h1" class="p-2">-</td><td id="sc-p-h2" class="p-2">-</td><td id="sc-p-h3" class="p-2">-</td>
+                            <td id="sc-p-h4" class="p-2">-</td><td id="sc-p-h5" class="p-2">-</td><td id="sc-p-h6" class="p-2">-</td>
+                            <td id="sc-p-h7" class="p-2">-</td><td id="sc-p-h8" class="p-2">-</td><td id="sc-p-h9" class="p-2">-</td>
+                            <td id="sc-p-out" class="p-2 bg-slate-900 text-emerald-400">-</td>
+                            <td id="sc-p-h10" class="p-2">-</td><td id="sc-p-h11" class="p-2">-</td><td id="sc-p-h12" class="p-2">-</td>
+                            <td id="sc-p-h13" class="p-2">-</td><td id="sc-p-h14" class="p-2">-</td><td id="sc-p-h15" class="p-2">-</td>
+                            <td id="sc-p-h16" class="p-2">-</td><td id="sc-p-h17" class="p-2">-</td><td id="sc-p-h18" class="p-2">-</td>
+                            <td id="sc-p-in" class="p-2 bg-slate-900 text-emerald-400">-</td>
+                            <td id="sc-p-tot" class="p-2 bg-emerald-950/60 text-emerald-300 font-black">-</td>
+                        </tr>
+                        <!-- Virtual Opponent Row -->
+                        <tr class="border-b border-slate-800 font-bold text-slate-300">
+                            <td id="sc-opp-lbl" class="p-2 text-left text-gold-400 truncate">OPPONENT</td>
+                            <td id="sc-o-h1" class="p-2">-</td><td id="sc-o-h2" class="p-2">-</td><td id="sc-o-h3" class="p-2">-</td>
+                            <td id="sc-o-h4" class="p-2">-</td><td id="sc-o-h5" class="p-2">-</td><td id="sc-o-h6" class="p-2">-</td>
+                            <td id="sc-o-h7" class="p-2">-</td><td id="sc-o-h8" class="p-2">-</td><td id="sc-o-h9" class="p-2">-</td>
+                            <td id="sc-o-out" class="p-2 bg-slate-900 text-gold-400">-</td>
+                            <td id="sc-o-h10" class="p-2">-</td><td id="sc-o-h11" class="p-2">-</td><td id="sc-o-h12" class="p-2">-</td>
+                            <td id="sc-o-h13" class="p-2">-</td><td id="sc-o-h14" class="p-2">-</td><td id="sc-o-h15" class="p-2">-</td>
+                            <td id="sc-o-h16" class="p-2">-</td><td id="sc-o-h17" class="p-2">-</td><td id="sc-o-h18" class="p-2">-</td>
+                            <td id="sc-o-in" class="p-2 bg-slate-900 text-gold-400">-</td>
+                            <td id="sc-o-tot" class="p-2 bg-emerald-950/60 text-gold-300 font-black">-</td>
+                        </tr>
+                        <!-- Match Play Cumulative Status Row -->
+                        <tr class="bg-slate-950 text-gold-400 font-black text-[11px]">
+                            <td class="p-2 text-left text-slate-400">MATCH STATUS</td>
+                            <td id="sc-m-h1" class="p-2">-</td><td id="sc-m-h2" class="p-2">-</td><td id="sc-m-h3" class="p-2">-</td>
+                            <td id="sc-m-h4" class="p-2">-</td><td id="sc-m-h5" class="p-2">-</td><td id="sc-m-h6" class="p-2">-</td>
+                            <td id="sc-m-h7" class="p-2">-</td><td id="sc-m-h8" class="p-2">-</td><td id="sc-m-h9" class="p-2">-</td>
+                            <td id="sc-m-out" class="p-2 bg-slate-900">-</td>
+                            <td id="sc-m-h10" class="p-2">-</td><td id="sc-m-h11" class="p-2">-</td><td id="sc-m-h12" class="p-2">-</td>
+                            <td id="sc-m-h13" class="p-2">-</td><td id="sc-m-h14" class="p-2">-</td><td id="sc-m-h15" class="p-2">-</td>
+                            <td id="sc-m-h16" class="p-2">-</td><td id="sc-m-h17" class="p-2">-</td><td id="sc-m-h18" class="p-2">-</td>
+                            <td id="sc-m-in" class="p-2 bg-slate-900">-</td>
+                            <td id="sc-m-tot" class="p-2 bg-gold-950/80 text-gold-300">-</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-3 bg-slate-950 border-t border-slate-800 flex justify-end">
+                <button onclick="toggleScorecardModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-white rounded-lg transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Application Engine Logic -->
+    <script>
+        // Official Whipsnade Park Golf Club White Tees Scorecard Data
+        const WHIPSNADE_WHITE_TEES = [
+            { hole: 1, name: "The Quarry", par: 5, yards: 470, si: 12, tip: "Downhill par 5 opening hole. Drive right of center to set up an aggressive lay-up." },
+            { hole: 2, name: "Bury Hill", par: 4, yards: 365, si: 8, tip: "Dogleg right requiring accurate placement. Avoid the trees guarding the corner." },
+            { hole: 3, name: "Valley View", par: 3, yards: 146, si: 18, tip: "Short par 3 over a gentle valley. Mind the prevailing wind selecting your iron." },
+            { hole: 4, name: "The Spinney", par: 5, yards: 502, si: 10, tip: "Longer par 5 stretching away. Maintain fairway accuracy to reach green in three." },
+            { hole: 5, name: "Chalk Pit", par: 4, yards: 411, si: 2, tip: "Toughest front nine par 4. Requires two long, straight strikes to hit the green." },
+            { hole: 6, name: "The Avenue", par: 5, yards: 470, si: 16, tip: "Straight par 5 lined with mature trees. Birdie opportunity with a well-placed tee shot." },
+            { hole: 7, name: "The Oaks", par: 3, yards: 197, si: 14, tip: "Challenging long par 3 requiring a crisp long iron or hybrid into a guarded green." },
+            { hole: 8, name: "Windmill", par: 4, yards: 415, si: 6, tip: "Uphill par 4 playing longer than yardage. Add an extra club on your approach." },
+            { hole: 9, name: "Halfway House", par: 4, yards: 412, si: 4, tip: "Demanding stroke index 4 to close out the front nine. Protect against the left bunker." },
+            { hole: 10, name: "The Beeches", par: 4, yards: 390, si: 9, tip: "Solid start to the back nine. Keep drive middle to open up green approach." },
+            { hole: 11, name: "Downs Way", par: 5, yards: 549, si: 7, tip: "Longest par 5 on the course. True three-shotter requiring disciplined placement." },
+            { hole: 12, name: "Phip's Choice", par: 4, yards: 410, si: 1, tip: "Stroke Index 1. Narrow tee shot window and well-defended green require precision." },
+            { hole: 13, name: "The Dell", par: 3, yards: 181, si: 13, tip: "Picturesque par 3. Missing short leaves difficult chip out of front bunkers." },
+            { hole: 14, name: "The Copse", par: 4, yards: 379, si: 11, tip: "Medium length par 4. Favors a slight draw off the tee off the right side." },
+            { hole: 15, name: "Kensworth", par: 4, yards: 408, si: 5, tip: "Challenging late par 4. Keep second shot left of pin for optimal putting angle." },
+            { hole: 16, name: "Studham", par: 4, yards: 384, si: 3, tip: "Tricky tee shot with out of bounds danger. Play conservatively off the tee." },
+            { hole: 17, name: "Chilterns", par: 3, yards: 156, si: 17, tip: "Penultimate par 3 into a multi-tiered green. Distance control is critical." },
+            { hole: 18, name: "Home Hole", par: 5, yards: 470, si: 15, tip: "Superb closing par 5. Risk and reward tee shot to finish your match in style." }
+        ];
+
+        // Global State Model
+        const gameState = {
+            playerName: "Golfer 1",
+            difficulty: "medium",
+            oppName: "Virtual Pro",
+            oppHcp: 4.5,
+            oppTargetOverHcp: 3, // Target over hcp across 18 holes (+1 to +6)
+            oppTargetGross: 80.5,
+            oppHoleScores: [], // Precomputed 18 gross scores
+            currentHoleIndex: 0,
+            selectedPlayerScore: null,
+            currentOppScore: null,
+            matchMargin: 0, // >0 means player up, <0 means opp up
+            playerScores: Array(18).fill(null),
+            oppScores: Array(18).fill(null),
+            matchHistory: Array(18).fill(null),
+            matchFinished: false
+        };
+
+        function updateOpponentPreview() {
+            const radios = document.getElementsByName('difficulty');
+            let selectedDiff = 'medium';
+            for (const r of radios) {
+                if (r.checked) {
+                    selectedDiff = r.value;
+                    break;
+                }
+            }
+            gameState.difficulty = selectedDiff;
+
+            const nameEl = document.getElementById('ai-name');
+            const hcpEl = document.getElementById('ai-hcp-badge');
+            const descEl = document.getElementById('ai-desc');
+
+            if (selectedDiff === 'easy') {
+                nameEl.innerText = "Alan Birch (Easy)";
+                hcpEl.innerText = "Hcp 7.5";
+                descEl.innerText = "Solid player, occasional stray drive on tough holes.";
+            } else if (selectedDiff === 'medium') {
+                nameEl.innerText = "Mark Stevens (Medium)";
+                hcpEl.innerText = "Hcp 4.2";
+                descEl.innerText = "Consistent ball-striker, steady under pressure.";
+            } else {
+                nameEl.innerText = "David Miller (Hard)";
+                hcpEl.innerText = "Hcp 1.1";
+                descEl.innerText = "Scratch caliber golfer, precise short game control.";
+            }
+        }
+
+        // Generate Opponent 18-Hole Plan strictly between +1 to +6 over their assigned handicap
+        function generateOpponentHolePlan() {
+            let baseHcp = 4.2;
+            let oppName = "Mark Stevens";
+
+            if (gameState.difficulty === 'easy') {
+                baseHcp = 6.0 + Math.random() * 3.0; // 6.0 - 9.0
+                oppName = "Alan Birch";
+            } else if (gameState.difficulty === 'medium') {
+                baseHcp = 3.0 + Math.random() * 3.0; // 3.0 - 6.0
+                oppName = "Mark Stevens";
+            } else {
+                baseHcp = Math.random() * 3.0; // 0.0 - 3.0
+                oppName = "David Miller";
+            }
+
+            gameState.oppHcp = parseFloat(baseHcp.toFixed(1));
+            gameState.oppName = oppName;
+
+            // Pick random target between +1 and +6 over assigned handicap
+            const overHcpAddition = 1 + Math.floor(Math.random() * 6); // 1 to 6
+            gameState.oppTargetOverHcp = overHcpAddition;
+
+            // Total target gross across 18 holes = Par (73) + Handicap + OverHcp
+            const totalTargetStrokes = Math.round(73 + gameState.oppHcp + overHcpAddition);
+            gameState.oppTargetGross = totalTargetStrokes;
+
+            // Base scores start at par for each hole
+            const scores = WHIPSNADE_WHITE_TEES.map(h => h.par);
+            let currentSum = scores.reduce((a, b) => a + b, 0); // 73
+            let neededOverPar = totalTargetStrokes - 73;
+
+            // Sort hole indices by Stroke Index (SI 1 is hardest, SI 18 is easiest)
+            const sortedHoles = [...WHIPSNADE_WHITE_TEES]
+                .map((h, idx) => ({ idx, si: h.si }))
+                .sort((a, b) => a.si - b.si);
+
+            // Distribute extra strokes primarily on hard stroke index holes
+            let distributeIdx = 0;
+            while (neededOverPar > 0) {
+                const targetHoleIdx = sortedHoles[distributeIdx % 18].idx;
+                scores[targetHoleIdx] += 1;
+                neededOverPar--;
+                distributeIdx++;
+            }
+
+            // Introduce minor realistic variation (swap +-1 stroke between pairs of holes)
+            for (let i = 0; i < 3; i++) {
+                const r1 = Math.floor(Math.random() * 18);
+                const r2 = Math.floor(Math.random() * 18);
+                if (r1 !== r2 && scores[r1] > WHIPSNADE_WHITE_TEES[r1].par - 1) {
+                    scores[r1] -= 1;
+                    scores[r2] += 1;
+                }
+            }
+
+            gameState.oppHoleScores = scores;
+        }
+
+        function handleStartGame(e) {
+            if (e && e.preventDefault) e.preventDefault();
+
+            const nameInput = document.getElementById('player-name').value.trim();
+            gameState.playerName = nameInput || "Golfer 1";
+
+            // Initialize AI match parameters
+            generateOpponentHolePlan();
+
+            // Reset Game state
+            gameState.currentHoleIndex = 0;
+            gameState.matchMargin = 0;
+            gameState.playerScores = Array(18).fill(null);
+            gameState.oppScores = Array(18).fill(null);
+            gameState.matchHistory = Array(18).fill(null);
+            gameState.matchFinished = false;
+
+            // Update Labels
+            document.getElementById('sc-player-lbl').innerText = gameState.playerName.toUpperCase();
+            document.getElementById('sc-opp-lbl').innerText = gameState.oppName.toUpperCase();
+            document.getElementById('opp-card-name').innerText = `${gameState.oppName} (${gameState.oppHcp})`;
+
+            // View Transition
+            document.getElementById('setup-view').classList.add('hidden');
+            document.getElementById('summary-view').classList.add('hidden');
+            document.getElementById('gameplay-view').classList.remove('hidden');
+            document.getElementById('header-status-badge').classList.remove('hidden');
+
+            document.getElementById('match-status-text').innerText = "ALL SQUARE";
+            document.getElementById('match-header-state').innerText = "ALL SQUARE";
+
+            // Load Hole 1
+            loadHole(0);
+        }
+
+        function loadHole(index) {
+            gameState.currentHoleIndex = index;
+            const holeData = WHIPSNADE_WHITE_TEES[index];
+
+            document.getElementById('match-hole-indicator').innerText = `Hole ${holeData.hole} of 18`;
+            document.getElementById('hole-number-badge').innerText = `HOLE ${holeData.hole}`;
+            document.getElementById('hole-name').innerText = holeData.name;
+            document.getElementById('hole-par').innerText = holeData.par;
+            document.getElementById('hole-yards').innerText = holeData.yards;
+            document.getElementById('hole-si').innerText = holeData.si;
+            document.getElementById('hole-tip').innerText = holeData.tip;
+
+            // Update player quick score button labels
+            document.getElementById('eagle-val').innerText = Math.max(1, holeData.par - 2);
+            document.getElementById('birdie-val').innerText = holeData.par - 1; 
+            document.getElementById('par-val').innerText = holeData.par;       
+            document.getElementById('bogey-val').innerText = holeData.par + 1;     
+            document.getElementById('double-val').innerText = holeData.par + 2;    
+
+            // Clear inputs
+            document.getElementById('custom-player-score').value = '';
+            resetScoreSelectorUI();
+            gameState.selectedPlayerScore = null;
+            gameState.currentOppScore = null;
+
+            // Reset Opponent card
+            document.getElementById('opp-score-text').innerText = "?";
+            document.getElementById('opp-score-text').className = "text-2xl font-black text-white";
+            document.getElementById('opp-score-label').innerText = "Simulate opponent hole score";
+            document.getElementById('opp-sim-status').innerText = "Ready";
+            document.getElementById('opp-sim-status').className = "text-[10px] font-semibold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800";
+            document.getElementById('sim-opp-btn').disabled = false;
+
+            document.getElementById('confirm-hole-btn').disabled = true;
+
+            // Render Hole Canvas Visualization
+            drawHoleLayout(holeData);
+        }
+
+        function drawHoleLayout(hole) {
+            const canvas = document.getElementById('hole-canvas');
+            if (!canvas) return;
+
+            // Set dynamic canvas size according to container
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width || 500;
+            canvas.height = rect.height || 280;
+
+            const ctx = canvas.getContext('2d');
+            const w = canvas.width;
+            const h = canvas.height;
+
+            // Background fairway gradient
+            const bgGrad = ctx.createLinearGradient(0, 0, w, h);
+            bgGrad.addColorStop(0, '#064e3b');
+            bgGrad.addColorStop(1, '#022c22');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, w, h);
+
+            // Rough / Fairway rendering
+            ctx.fillStyle = '#0f766e';
+            ctx.beginPath();
+            ctx.ellipse(w * 0.5, h * 0.5, w * 0.42, h * 0.3, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Fairway band
+            ctx.fillStyle = '#15803d';
+            ctx.beginPath();
+            if (hole.par === 3) {
+                ctx.ellipse(w * 0.5, h * 0.5, w * 0.35, h * 0.22, 0, 0, Math.PI * 2);
+            } else {
+                ctx.ellipse(w * 0.5, h * 0.5, w * 0.38, h * 0.18, -0.05, 0, Math.PI * 2);
+            }
+            ctx.fill();
+
+            // Tee Box
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(w * 0.08, h * 0.48, 12, 12);
+            ctx.fillStyle = '#38bdf8';
+            ctx.font = '10px sans-serif';
+            ctx.fillText('TEE', w * 0.07, h * 0.65);
+
+            // Bunkers
+            ctx.fillStyle = '#fde047';
+            ctx.beginPath();
+            ctx.ellipse(w * 0.68, h * 0.35, 18, 10, 0.3, 0, Math.PI * 2);
+            ctx.ellipse(w * 0.75, h * 0.62, 15, 8, -0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Green
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.ellipse(w * 0.82, h * 0.48, 26, 22, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Flag Pin
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(w * 0.82, h * 0.48);
+            ctx.lineTo(w * 0.82, h * 0.32);
+            ctx.stroke();
+
+            // Flag cloth
+            ctx.fillStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(w * 0.82, h * 0.32);
+            ctx.lineTo(w * 0.88, h * 0.36);
+            ctx.lineTo(w * 0.82, h * 0.40);
+            ctx.closePath();
+            ctx.fill();
+
+            // Hole Text overlay
+            ctx.fillStyle = '#e2e8f0';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.fillText(`${hole.yards} YDS - PAR ${hole.par}`, w * 0.08, h * 0.18);
+        }
+
+        function resetScoreSelectorUI() {
+            const btns = document.querySelectorAll('.score-selector-btn');
+            btns.forEach(b => {
+                b.classList.remove('ring-2', 'ring-emerald-500', 'bg-emerald-950');
+            });
+        }
+
+        function selectPlayerScore(offsetFromPar) {
+            const holeData = WHIPSNADE_WHITE_TEES[gameState.currentHoleIndex];
+            const grossScore = Math.max(1, holeData.par + offsetFromPar);
+            
+            gameState.selectedPlayerScore = grossScore;
+            document.getElementById('custom-player-score').value = grossScore;
+
+            resetScoreSelectorUI();
+            
+            let btnId = 'score-btn-par';
+            if (offsetFromPar === -2) btnId = 'score-btn-eagle';
+            else if (offsetFromPar === -1) btnId = 'score-btn-birdie';
+            else if (offsetFromPar === 0) btnId = 'score-btn-par';
+            else if (offsetFromPar === 1) btnId = 'score-btn-bogey';
+            else if (offsetFromPar >= 2) btnId = 'score-btn-double';
+
+            const activeBtn = document.getElementById(btnId);
+            if (activeBtn) {
+                activeBtn.classList.add('ring-2', 'ring-emerald-500', 'bg-emerald-950');
+            }
+
+            checkCanConfirmHole();
+        }
+
+        function handleCustomScoreInput(val) {
+            const num = parseInt(val, 10);
+            if (!isNaN(num) && num > 0) {
+                gameState.selectedPlayerScore = num;
+                resetScoreSelectorUI();
+                checkCanConfirmHole();
+            } else {
+                gameState.selectedPlayerScore = null;
+                checkCanConfirmHole();
+            }
+        }
+
+        function simulateOpponentHole() {
+            const holeIdx = gameState.currentHoleIndex;
+            const holeData = WHIPSNADE_WHITE_TEES[holeIdx];
+            const plannedScore = gameState.oppHoleScores[holeIdx];
+
+            gameState.currentOppScore = plannedScore;
+
+            const textEl = document.getElementById('opp-score-text');
+            const labelEl = document.getElementById('opp-score-label');
+            const statusEl = document.getElementById('opp-sim-status');
+
+            textEl.innerText = plannedScore;
+
+            const diff = plannedScore - holeData.par;
+            if (diff <= -2) {
+                textEl.className = "text-2xl font-black text-emerald-400";
+                labelEl.innerText = `Eagle (${plannedScore})`;
+            } else if (diff === -1) {
+                textEl.className = "text-2xl font-black text-emerald-300";
+                labelEl.innerText = `Birdie (${plannedScore})`;
+            } else if (diff === 0) {
+                textEl.className = "text-2xl font-black text-white";
+                labelEl.innerText = `Par (${plannedScore})`;
+            } else if (diff === 1) {
+                textEl.className = "text-2xl font-black text-amber-400";
+                labelEl.innerText = `Bogey (${plannedScore})`;
+            } else {
+                textEl.className = "text-2xl font-black text-rose-400";
+                labelEl.innerText = `Double Bogey+ (${plannedScore})`;
+            }
+
+            statusEl.innerText = "Completed";
+            statusEl.className = "text-[10px] font-semibold text-slate-300 bg-slate-800 px-2 py-0.5 rounded border border-slate-700";
+            document.getElementById('sim-opp-btn').disabled = true;
+
+            checkCanConfirmHole();
+        }
+
+        function checkCanConfirmHole() {
+            const canConfirm = gameState.selectedPlayerScore !== null && gameState.currentOppScore !== null;
+            document.getElementById('confirm-hole-btn').disabled = !canConfirm;
+        }
+
+        function submitHoleOutcome() {
+            const index = gameState.currentHoleIndex;
+            const pScore = gameState.selectedPlayerScore; 
+            const oScore = gameState.currentOppScore;     
+
+            gameState.playerScores[index] = pScore;
+            gameState.oppScores[index] = oScore;
+
+            // Scratch Match Play: direct gross vs gross comparison
+            if (pScore < oScore) {
+                gameState.matchMargin += 1; // Player wins hole
+            } else if (oScore < pScore) {
+                gameState.matchMargin -= 1; // Opponent wins hole
+            }
+
+            const holesRemaining = 18 - (index + 1);
+            const absMargin = Math.abs(gameState.matchMargin);
+            let statusText = "ALL SQUARE";
+
+            if (gameState.matchMargin > 0) {
+                statusText = `${absMargin} UP`;
+            } else if (gameState.matchMargin < 0) {
+                statusText = `${absMargin} DOWN`;
+            }
+
+            gameState.matchHistory[index] = statusText;
+
+            updateScorecardTable(index, pScore, oScore, statusText);
+
+            // Check for Match Conclusion
+            if (absMargin > holesRemaining) {
+                const winningMarginStr = `${absMargin} & ${holesRemaining}`;
+                const winnerName = gameState.matchMargin > 0 ? gameState.playerName : gameState.oppName;
+                finishMatch(winnerName, winningMarginStr, gameState.matchMargin > 0);
+                return;
+            } else if (holesRemaining === 0) {
+                if (gameState.matchMargin === 0) {
+                    finishMatch("Halved", "All Square", null);
+                } else {
+                    const winnerName = gameState.matchMargin > 0 ? gameState.playerName : gameState.oppName;
+                    const finalStr = `${absMargin} UP`;
+                    finishMatch(winnerName, finalStr, gameState.matchMargin > 0);
+                }
+                return;
+            }
+
+            // Dormie status check
+            if (absMargin === holesRemaining && absMargin > 0) {
+                document.getElementById('dormie-alert').classList.remove('hidden');
+                document.getElementById('dormie-alert').innerText = `DORMIE ${absMargin}`;
+            } else {
+                document.getElementById('dormie-alert').classList.add('hidden');
+            }
+
+            document.getElementById('match-status-text').innerText = statusText;
+            document.getElementById('match-header-state').innerText = statusText;
+
+            loadHole(index + 1);
+        }
+
+        function updateScorecardTable(holeIdx, pScore, oScore, matchStatus) {
+            const holeNum = holeIdx + 1;
+            
+            const pCell = document.getElementById(`sc-p-h${holeNum}`);
+            const oCell = document.getElementById(`sc-o-h${holeNum}`);
+            const mCell = document.getElementById(`sc-m-h${holeNum}`);
+
+            if (pCell) pCell.innerText = pScore;
+            if (oCell) oCell.innerText = oScore;
+            if (mCell) mCell.innerText = matchStatus;
+
+            let pOut = 0, pIn = 0, pTot = 0;
+            let oOut = 0, oIn = 0, oTot = 0;
+
+            for (let i = 0; i < 18; i++) {
+                if (gameState.playerScores[i] !== null) {
+                    pTot += gameState.playerScores[i];
+                    if (i < 9) pOut += gameState.playerScores[i];
+                    else pIn += gameState.playerScores[i];
+                }
+                if (gameState.oppScores[i] !== null) {
+                    oTot += gameState.oppScores[i];
+                    if (i < 9) oOut += gameState.oppScores[i];
+                    else oIn += gameState.oppScores[i];
+                }
+            }
+
+            document.getElementById('sc-p-out').innerText = pOut || '-';
+            document.getElementById('sc-p-in').innerText = pIn || '-';
+            document.getElementById('sc-p-tot').innerText = pTot || '-';
+
+            document.getElementById('sc-o-out').innerText = oOut || '-';
+            document.getElementById('sc-o-in').innerText = oIn || '-';
+            document.getElementById('sc-o-tot').innerText = oTot || '-';
+        }
+
+        function finishMatch(winnerName, marginStr, playerWon) {
+            gameState.matchFinished = true;
+
+            document.getElementById('gameplay-view').classList.add('hidden');
+            document.getElementById('summary-view').classList.remove('hidden');
+
+            const title = document.getElementById('final-result-title');
+            const subtitle = document.getElementById('final-result-subtitle');
+            const trophyIcon = document.getElementById('summary-trophy-icon');
+
+            if (playerWon === true) {
+                title.innerText = `${gameState.playerName} Wins ${marginStr}!`;
+                title.className = "text-3xl sm:text-4xl font-extrabold text-emerald-400 mt-1";
+                subtitle.innerText = `Sensational victory against ${gameState.oppName} at Whipsnade Park GC.`;
+                trophyIcon.className = "fa-solid fa-trophy text-gold-400";
+            } else if (playerWon === false) {
+                title.innerText = `${gameState.oppName} Wins ${marginStr}`;
+                title.className = "text-3xl sm:text-4xl font-extrabold text-rose-400 mt-1";
+                subtitle.innerText = `Hard fought scratch match from the White Tees.`;
+                trophyIcon.className = "fa-solid fa-flag text-rose-400";
+            } else {
+                title.innerText = `Match Halved (${marginStr})`;
+                title.className = "text-3xl sm:text-4xl font-extrabold text-gold-400 mt-1";
+                subtitle.innerText = `Evenly matched scratch battle over 18 holes!`;
+                trophyIcon.className = "fa-solid fa-handshake text-gold-400";
+            }
+
+            let wonCount = 0, lostCount = 0, halvedCount = 0;
+            let playerGrossTotal = 0, oppGrossTotal = 0;
+
+            for (let i = 0; i < 18; i++) {
+                const ps = gameState.playerScores[i];
+                const os = gameState.oppScores[i];
+
+                if (ps !== null && os !== null) {
+                    playerGrossTotal += ps;
+                    oppGrossTotal += os;
+
+                    if (ps < os) wonCount++;
+                    else if (os < ps) lostCount++;
+                    else halvedCount++;
+                }
+            }
+
+            document.getElementById('stat-holes-won').innerText = wonCount;
+            document.getElementById('stat-holes-lost').innerText = lostCount;
+            document.getElementById('stat-holes-halved').innerText = halvedCount;
+            document.getElementById('stat-player-gross').innerText = playerGrossTotal || "N/A";
+
+            document.getElementById('stat-opp-target').innerText = `+${gameState.oppTargetOverHcp} over Hcp (${gameState.oppName})`;
+            document.getElementById('stat-opp-actual').innerText = `${oppGrossTotal} Gross (${oppGrossTotal - 73 >= 0 ? '+' : ''}${oppGrossTotal - 73} Par)`;
+        }
+
+        function toggleScorecardModal() {
+            const modal = document.getElementById('scorecard-modal');
+            if (modal.classList.contains('opacity-0')) {
+                modal.classList.remove('opacity-0', 'pointer-events-none');
+            } else {
+                modal.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        function confirmRestartGame() {
+            if (confirm("Are you sure you want to quit the current match?")) {
+                resetToSetup();
+            }
+        }
+
+        function resetToSetup() {
+            document.getElementById('gameplay-view').classList.add('hidden');
+            document.getElementById('summary-view').classList.add('hidden');
+            document.getElementById('setup-view').classList.remove('hidden');
+            document.getElementById('header-status-badge').classList.add('hidden');
+            
+            for(let i=1; i<=18; i++) {
+                if(document.getElementById(`sc-p-h${i}`)) document.getElementById(`sc-p-h${i}`).innerText = '-';
+                if(document.getElementById(`sc-o-h${i}`)) document.getElementById(`sc-o-h${i}`).innerText = '-';
+                if(document.getElementById(`sc-m-h${i}`)) document.getElementById(`sc-m-h${i}`).innerText = '-';
+            }
+        }
+
+        // Initialize preview on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            updateOpponentPreview();
+            window.addEventListener('resize', () => {
+                if (!document.getElementById('gameplay-view').classList.contains('hidden')) {
+                    drawHoleLayout(WHIPSNADE_WHITE_TEES[gameState.currentHoleIndex]);
+                }
+            });
+        });
+    </script>
+</body>
+</html>
